@@ -5,6 +5,7 @@ from scipy.optimize import minimize
 import matplotlib.pyplot as plt
 
 #numpy.random.seed(100)
+C = 0.8
 classA = numpy.concatenate((numpy.random.randn( 10 , 2) * 0.2 + [ 1.5 , 0.5 ],numpy.random.randn( 10 , 2) * 0.2 + [ -1.5 , 0.5 ] ) )
 classB = numpy.random.randn( 20 , 2) * 0.2 + [ 0.0 , -0.5]
 x = numpy.concatenate((classA,classB))
@@ -56,14 +57,14 @@ Calculates a value which should be constrained to zero
 Takes a vector as an argument
 Returns a scalar
 """
-def zerofun(α,t):
+def zerofun(α):
     return numpy.dot(α,t)
 
 
 """
 Indicator Function
 """
-def ind(s,ts,b):
+def ind(α,s,ts,b):
     result = 0
     for i in range(N):
         result += α[i]*t[i]*K1(s,x[i])
@@ -73,7 +74,7 @@ def ind(s,ts,b):
 Equation (7)
 b is threshold value
 """
-def b(s,ts):
+def b(α,s,ts):
     result = 0
     for i in range(N):
         result += α[i]*t[i]*K1(s,x[i])
@@ -84,16 +85,22 @@ def b(s,ts):
 
 
 
-bounds=[(0, C) for b in range(N)]
-
+B=[(0, C) for b in range(N)]
+XC = {'type':'eq' , 'fun':zerofun}
 
 ret = minimize( objective, α, bounds = B, constraints = XC)
 alpha = ret[ 'x' ]
+
+# Extracting the non-zeros α
+nonzero_α_indices = numpy.nonzero(alpha > 10e-5)
+nonzero_x_values = x[nonzero_α_indices]
+nonzero_t_values = t[nonzero_α_indices]
 
 
 
 plt.plot( [p[0] for p in classA] , [p[1] for p in classA] , 'b.')
 plt.plot( [p[0] for p in classB] , [p[1] for p in classB] , 'r.')
+plt.plot( [p[0] for p in nonzero_x_values] , [p[1] for p in nonzero_x_values] , 'k.')
 plt.axis('equal')
 plt.legend(['classA','classB'])
 plt.grid()
