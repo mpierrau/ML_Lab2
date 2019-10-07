@@ -56,34 +56,38 @@ Calculates a value which should be constrained to zero
 Takes a vector as an argument
 Returns a scalar
 """
-def zerofun():
-    return 0
-
+def zerofun(α,t):
+    return numpy.dot(α,t)
 
 
 """
 Indicator Function
 """
-def ind(α,s,t,x,b):
-    K = K1(s*t.shape[0],x)
-    return numpy.sum( α*t*K - b )
+def ind(s,ts,b):
+    result = 0
+    for i in range(N):
+        result += α[i]*t[i]*K1(s,x[i])
+    return result - b
 
 """
 Equation (7)
+b is threshold value
 """
-def b(α,s,t,x,b,ts):
-    K = K1(s*t.shape[0],x)
-    return numpy.sum( α*t*K - ts )
+def b(s,ts):
+    result = 0
+    for i in range(N):
+        result += α[i]*t[i]*K1(s,x[i])
+    return result - ts
 
 ## ===== HEART OF THE PROGRAM ===== ##
 
 
 
-α = numpy.zeros(N)
+
 bounds=[(0, C) for b in range(N)]
 
 
-ret = minimize( objective, start, bounds = B, constraints = XC)
+ret = minimize( objective, α, bounds = B, constraints = XC)
 alpha = ret[ 'x' ]
 
 
@@ -95,3 +99,7 @@ plt.legend(['classA','classB'])
 plt.grid()
 plt.show()
 
+xgrid = numpy.linspace(-5,5)
+ygrid = numpy.linspace(-4,4)
+
+grid = numpy.array([[ind()]])
