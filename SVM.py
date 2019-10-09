@@ -5,7 +5,7 @@ from scipy.optimize import minimize
 import matplotlib.pyplot as plt
 
 #numpy.random.seed(100)
-C = 1000
+C = 5
 classA = numpy.concatenate( ( numpy.random.randn( 10 , 2) * 0.2 + [ 1.7 , 0.5 ] , numpy.random.randn( 20 , 2) * 0.2 + [ -1.6 , -0.8] ) ) 
 classB = numpy.concatenate( ( numpy.random.randn( 20 , 2) * 0.2 + [ 1.8 , -0.6] , numpy.random.randn( 10 , 2) * 0.2 + [ -1.4 , 0.7 ] ) ) 
 x = numpy.concatenate((classA,classB))
@@ -30,14 +30,14 @@ def K1(x_in,y_in):
 """
 Polynomial Kernel
 """
-def K12(x,y,p=2):
+def K2(x,y,p=2):
     return ( numpy.dot(x,numpy.transpose(y)) + 1 )**p
 
 """
 Radial Basis Function (RBF) Kernel
 """
 def K3(x,y,σ=0.5):
-    return numpy.exp( -( ((x - y)**2)/(2*σ**2) ) )
+    return numpy.exp( -( (numpy.linalg.norm(x - y)**2)/(2*σ**2) ) )
 
 """
 Takes a vector as an argument
@@ -46,9 +46,10 @@ Returns a scalar
 P = numpy.zeros([N,N])
 for i in range(N):
     for j in range(N):
-        P[i,j] = t[i]*t[j]*K1(x[i],x[j])
-
+        P[i,j] = t[i]*t[j]*K3(x[i],x[j])
+        
 def objective(α):
+
     part1 = numpy.dot(α , numpy.dot(α.transpose() , P))/2
     return part1 - numpy.sum(α)
 
@@ -70,7 +71,7 @@ def ind(α_in,t_in,x_in,new_x,new_y,b):
     result = 0
     s = numpy.array([new_x, new_y])
     for i in range(len(α_in)):
-        result += α_in[i]*t_in[i]*K1(s,x_in[i])
+        result += α_in[i]*t_in[i]*K3(s,x_in[i])
     return result - b
 
 """
@@ -80,7 +81,7 @@ b is threshold value
 def b(α_nz,sv,t_sv, x_nz, t_nz):
     result = 0
     for i in range(len(α_nz)):
-        result += α_nz[i]*t_nz[i]*K1(sv,x_nz[i])
+        result += α_nz[i]*t_nz[i]*K3(sv,x_nz[i])
     return result - t_sv
 
 ## ===== HEART OF THE PROGRAM ===== ##
@@ -90,6 +91,11 @@ def b(α_nz,sv,t_sv, x_nz, t_nz):
 
 B=[(0, C) for index in range(N)]
 XC = {'type':'eq' , 'fun':zerofun}
+kernels = {'type':'K1' , 'fun':K1,
+           'type':'K2' , 'fun':K2,
+           'type':'K3' , 'fun':K3}
+
+appliedKernel = kernels.get("K1")
 
 ret = minimize( objective, α, bounds = B, constraints = XC)
 alpha = ret[ 'x' ]
